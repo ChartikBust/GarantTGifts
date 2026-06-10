@@ -1,8 +1,8 @@
 import express from "express";
-import { Telegraf } from "telegraf"; // Добавили Telegraf
-import { createBot } from "./bot/index.js"; // Оставили, если она нужна для логики внутри
+import { Telegraf } from "telegraf";
+import { createBot } from "./bot/index.js";
 
-const PORT = parseInt(process.env.PORT ?? "5000", 10);
+const PORT = parseInt(process.env.PORT ?? "10000", 10);
 
 if (!process.env.TELEGRAM_BOT_TOKEN) {
   throw new Error("TELEGRAM_BOT_TOKEN must be set.");
@@ -11,28 +11,28 @@ if (!process.env.TELEGRAM_BOT_TOKEN) {
 const app = express();
 app.use(express.json());
 
+// Маршрут для здоровья сервера (чтобы Render не выключал бота)
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-// ИСПРАВЛЕНИЕ ЗДЕСЬ:
-// Вместо вызова createBot(), который вызывал ошибку, 
-// мы создаем бота напрямую, а потом передаем его в ту функцию, если она нужна:
+// Создаем экземпляр бота
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
-// Если функция createBot из твоего файла './bot/index.js' 
-// просто настраивала обработчики, вызови её вот так (передав bot внутрь):
-// createBot(bot); 
-// ЕСЛИ ЭТО НЕ РАБОТАЕТ, просто удали строку выше и настрой обработчики прямо здесь.
+// Подключаем всю логику из папки bot/index.js
+createBot(bot);
 
 bot.telegram.getMe().then((info) => {
   console.log(`✅ Telegram bot @${info.username} connected`);
-}).catch(() => {});
+}).catch((err) => {
+  console.error("❌ Failed to get bot info:", err);
+});
 
 bot.launch().catch((err) => {
   console.error("❌ Bot launch error:", err);
   process.exit(1);
 });
+
 console.log("🚀 Bot polling started");
 
 app.listen(PORT, "0.0.0.0", () => {
