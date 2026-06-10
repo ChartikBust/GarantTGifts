@@ -1,0 +1,63 @@
+# NFT Гарант Бот
+
+Telegram-бот-гарант для безопасных сделок с цифровыми товарами (NFT, скины, аккаунты, Stars, крипта).
+
+## Run & Operate
+
+- `pnpm --filter @workspace/api-server run dev` — запустить сервер + Telegram бот (порт 5000)
+- `pnpm run typecheck` — проверка типов по всем пакетам
+- `pnpm run build` — typecheck + сборка всех пакетов
+- `pnpm --filter @workspace/db run push` — применить изменения схемы БД (только dev)
+- Требуемые env: `DATABASE_URL`, `TELEGRAM_BOT_TOKEN`
+
+## Stack
+
+- pnpm workspaces, Node.js 24, TypeScript 5.9
+- API: Express 5
+- DB: PostgreSQL + Drizzle ORM
+- Telegram: Telegraf v4
+- Validation: Zod v3, drizzle-zod
+- Runtime: tsx (dev), esbuild (prod)
+
+## Where things live
+
+- `lib/db/src/schema/` — схемы таблиц (users, wallets, deals, wallet_transactions)
+- `artifacts/api-server/src/bot/` — весь код Telegram бота
+  - `index.ts` — главный файл бота, все хэндлеры
+  - `db.ts` — запросы к базе данных
+  - `keyboards.ts` — клавиатуры и inline-кнопки
+  - `utils.ts` — вспомогательные функции
+  - `session.ts` — типы сессии
+
+## Architecture decisions
+
+- Бот запускается вместе с Express-сервером в одном процессе через `bot.launch()` (long polling)
+- Сессия пользователя хранится в памяти через telegraf session middleware
+- Telegram ID используется как primary key в таблице users
+- Сделки имеют уникальный 8-символьный код (hex), ссылка для приглашения партнёра через `?start=deal_CODE`
+- Кошелёк отображает свой ID пользователю; команда /add принимает ID кошелька
+
+## Команда /add — пополнение баланса
+
+Формат: `/add <ID кошелька> <сумма> <валюта>`
+
+Доступна **всем пользователям** (не только админам).
+
+Валюты:
+- `грн` или `uah` → Гривна
+- `руб` или `rub` → Рубль
+- `stars` → Telegram Stars ⭐
+- `ton` → TON
+
+Пример: `/add 5 100 грн`
+
+## User preferences
+
+- Общение на русском языке
+
+## Gotchas
+
+- После изменения схемы БД нужно: `pnpm --filter @workspace/db run push`
+- При первом запуске таблицы создаются автоматически через drizzle push
+- Бот работает через long polling (не webhook) — удобно для dev/Replit
+- zod используется v3 (не v4) из-за совместимости с drizzle-zod

@@ -1,0 +1,13 @@
+{
+  "name": "nft-garant-bot",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @workspace/api-server run dev",
+    "typecheck": "tsc -b",
+    "build": "pnpm run typecheck && pnpm --filter @workspace/api-server run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  }
+}
